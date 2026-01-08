@@ -1,272 +1,222 @@
-# 分子转换工具 (Molecular Conversion Tools)
+# mol-conversion
 
-一个专业的分子结构格式转换工具集，支持XYZ格式与其他多种常见化学格式之间的转换。
+A comprehensive Python package for molecular structure format conversion, focusing on XYZ format processing with support for multiple output formats.
 
-## 功能特性
+## Features
 
-- **双模式转换**: 支持文件到文件转换和内存到内存转换
-- **多种格式支持**: XYZ ↔ SDF, MOL, InChI, InChIKey, SMILES, PDB, MOL2, CIF
-- **GCN编码**: 提供基于图卷积网络的分子编码功能
-- **分子标准化**: 自动化的分子坐标标准化处理
-- **批处理支持**: 高效的批量分子转换能力
-- **面向对象设计**: 所有功能都集成在类中，提供清晰的API接口
+- **File-to-file conversion** using Open Babel subprocess
+- **Memory-to-memory conversion** using Open Babel Python API
+- **GCN-based molecular encoding** with three levels of complexity
+- **Molecular coordinate standardization**
+- **Multi-frame XYZ string parsing**
+- **Support for 8+ formats**: XYZ, SDF, InChI, InChIKey, SMILES, PDB, MOL2, and CIF
+- **Lazy loading** for Open Babel-dependent features
+- **Comprehensive test suite** with real molecular data
 
-## 项目结构
+## Installation
 
-```
-mol_conversion/
-├── __init__.py               # 包初始化文件
-├── setup.py                  # 安装脚本（向后兼容）
-├── pyproject.toml           # 现代包配置
-├── mol_conversion.py        # 文件转换方法（subprocess调用Open Babel）
-├── memory_conversion.py     # 内存转换方法（使用Open Babel Python API）
-├── utils.py                 # 分子分析工具（GCN编码、标准化等）
-├── mol_conversion.ipynb     # 使用示例Jupyter笔记本
-├── IFLOW.md                 # 项目上下文文档
-└── README.md                # 本文件
-```
+### Prerequisites
 
-## 安装
+This package requires Open Babel. Install it using conda:
 
-### 方法1：开发模式安装（推荐）
-
-```bash
-# 进入项目目录
-cd mol_conversion
-
-# 开发模式安装（可编辑模式）
-pip install -e .
-
-# 或者安装完整依赖
-pip install -e ".[dev]"
-```
-
-### 方法2：直接安装
-
-```bash
-# 如果发布到PyPI后
-pip install mol-conversion
-```
-
-### 方法3：Git仓库安装
-
-```bash
-pip install git+https://github.com/your-username/mol-conversion.git
-```
-
-### 依赖要求
-
-**系统依赖（重要）:**
-- **Open Babel**: 必须通过conda安装，不能通过pip安装
-- Python 3.8+
-
-**Python依赖:** (自动安装)
-- numpy >= 1.20.0
-- rdkit >= 2020.03.5
-- tqdm >= 4.60.0
-
-**重要：Open Babel安装（必须使用conda）:**
-
-**推荐安装方式（所有系统）:**
 ```bash
 conda install openbabel -c conda-forge
 ```
 
-**⚠️ 错误方式（会导致功能缺失）:**
-- ❌ `pip install openbabel` - 不存在此包
-- ❌ `sudo apt-get install openbabel` - 缺少Python绑定
-- ❌ `brew install openbabel` - 缺少Python绑定
-- ❌ 从官网下载安装包 - 缺少Python绑定
+### Install the package
 
-**说明**: Open Babel的Python绑定只能通过conda安装，因为需要编译。
-
-## 快速开始
-
-### 导入方式
-
-```python
-# 标准导入（安装后使用）
-import mol_conversion
-from mol_conversion import FileConversion, MemoryConversion, GCNEncoding
-
-# 快速便捷函数
-from mol_conversion import quick_xyz_to_inchi, quick_split_multiframe
+```bash
+pip install mol-conversion
 ```
 
-### 1. 文件转换模式（FileConversion）
+Or for development:
 
-适合需要将XYZ文件转换为其他格式文件的情况：
+```bash
+git clone https://github.com/your-username/mol-conversion.git
+cd mol-conversion
+pip install -e .
+```
+
+## Architecture
+
+The package uses a modern `src` layout with lazy loading:
+
+```
+src/mol_conversion/
+├── __init__.py          # Package entry point with lazy loading
+├── file_conversion.py   # File-to-file conversions
+├── memory_conversion.py # Memory-to-memory conversions  
+└── utils.py            # GCN encoding and utilities
+```
+
+## Quick Start
+
+### File Conversion
 
 ```python
 from mol_conversion import FileConversion
 
-# XYZ到SDF文件转换
+# Convert XYZ to various formats
 FileConversion.xyz_to_sdf("molecule.xyz", "molecule.sdf")
-
-# XYZ到PDB文件转换
 FileConversion.xyz_to_pdb("molecule.xyz", "molecule.pdb")
 
-# XYZ到MOL2文件转换
-FileConversion.xyz_to_mol2("molecule.xyz", "molecule.mol2")
-
-# XYZ到CIF文件转换
-FileConversion.xyz_to_cif("molecule.xyz", "molecule.cif")
-
-# XYZ文件到InChI字符串转换
+# Get string representations
 inchi = FileConversion.xyz_to_inchi("molecule.xyz")
-print(f"InChI: {inchi}")
-
-# XYZ文件到SMILES字符串转换
+inchikey = FileConversion.xyz_to_inchikey("molecule.xyz")
 smiles = FileConversion.xyz_to_smiles("molecule.xyz")
-print(f"SMILES: {smiles}")
-
-# 获取各种格式的字符串输出
-pdb_str = FileConversion.xyz_to_pdb_string("molecule.xyz")
-mol2_str = FileConversion.xyz_to_mol2_string("molecule.xyz")
-cif_str = FileConversion.xyz_to_cif_string("molecule.xyz")
-
-# 合并多个SDF文件
-FileConversion.merge_sdf_files(
-    sdf_list=["mol1.sdf", "mol2.sdf", "mol3.sdf"], 
-    output_path="combined.sdf"
-)
 ```
 
-### 2. 内存转换模式（MemoryConversion）
-
-适合需要链式转换和内存高效处理的场景：
+### Memory Conversion
 
 ```python
-from memory_conversion import MemoryConversion
+from mol_conversion import MemoryConversion
 
-xyz_string = """14
-Energy: -158.36316482
- C     1.965628    -0.044891     0.041336
- C    -1.928636     0.206074    -0.054869
- C    -0.547665    -0.397317     0.174957
- C     0.584659     0.558517    -0.188474
- H     0.479415     1.484663     0.402725
- H     0.479687     0.857511    -1.245797
- H    -0.442720    -0.696307     1.232280
- H    -0.442385    -1.323467    -0.416238
- H     2.101678    -0.324162     1.097821
- H     2.101862    -0.955927    -0.562083
- H     2.766586     0.658980    -0.226474
- H    -2.064698     0.485312    -1.111359
- H    -2.064872     1.117129     0.548524
- H    -2.729587    -0.497794     0.212971
+# Convert XYZ string to various formats
+xyz_string = """70
+Energy:-1025.075684 a.u. s1:  1 s2:  1 rot_angle:260 escan:0.0044
+C      1.381157     0.209710     1.978440
+C      1.326816     0.000000     0.469020
+... (remaining atoms)
 """
 
-# XYZ字符串到MOL格式转换
-mol_str = MemoryConversion.xyz_to_mol(xyz_string)
-print(f"MOL格式: {mol_str[:100]}...")
-
-# XYZ字符串到RDKit分子对象转换
-rdkit_mol = MemoryConversion.xyz_to_rdkit(xyz_string)
-print(f"RDKit分子对象: {type(rdkit_mol)}")
-
-# XYZ字符串到键级矩阵转换
-bond_matrix = MemoryConversion.xyz_to_bond_matrix(xyz_string)
-print(f"键级矩阵形状: {bond_matrix.shape}")
-
-# 完整的格式转换 - 文件格式字符串
-file_formats = {
-    'mol': MemoryConversion.xyz_to_mol_string(xyz_string),
-    'sdf': MemoryConversion.xyz_to_sdf_string(xyz_string),
-    'pdb': MemoryConversion.xyz_to_pdb_string(xyz_string),
-    'mol2': MemoryConversion.xyz_to_mol2_string(xyz_string),
-    'cif': MemoryConversion.xyz_to_cif_string(xyz_string)
-}
-
-for format_name, result in file_formats.items():
-    print(f"{format_name.upper()}字符串长度: {len(result)}")
-
-# 分子标识符转换
-identifiers = {
-    'inchi': MemoryConversion.xyz_to_inchi(xyz_string),
-    'inchikey': MemoryConversion.xyz_to_inchikey(xyz_string),
-    'smiles': MemoryConversion.xyz_to_smiles(xyz_string)
-}
-
-for name, value in identifiers.items():
-    print(f"{name.upper()}: {value}")
+mol_string = MemoryConversion.xyz_to_mol_string(xyz_string)
+inchi = MemoryConversion.xyz_to_inchi_string(xyz_string)
+bond_matrix = MemoryConversion.xyz_to_bond_order_matrix(xyz_string)
 ```
 
-### 3. 分子分析工具（GCN编码和标准化）
+### GCN Encoding
 
 ```python
-from utils import GCNEncoding, XYZStandardizer
+from mol_conversion import GCNEncoding
 
-# 获取GCN编码
+# Generate hierarchical GCN encodings
 encoder = GCNEncoding(xyz_string)
 encodings = encoder.encodings
 
-print("GCN0编码:", encodings['gcn0'])
-print("GCN1编码:", encodings['gcn1'])
-print("GCN2编码:", encodings['gcn2'])
+# Access different levels of encoding
+gcn0 = encodings["gcn0"]  # Basic atom + neighbor count encoding
+gcn1 = encodings["gcn1"]  # First-order neighbor encoding  
+gcn2 = encodings["gcn2"]  # Second-order neighbor encoding
 
-# 标准化分子坐标
-standardizer = XYZStandardizer(xyz_string)
-standardized_xyz = standardizer.to_standard_xyz()
-print("标准化后的XYZ:")
-print(standardized_xyz)
+# Hydrogen atoms return empty strings
 ```
 
-## 支持的转换格式
+### Multi-frame XYZ Processing
 
-| 输入格式 | 输出格式 | FileConversion类 | MemoryConversion类 | 描述 |
-|---------|---------|------------------|-------------------|------|
-| XYZ文件 | SDF文件 | `xyz_to_sdf()` | - | 结构数据文件 |
-| XYZ文件 | MOL文件 | `xyz_to_mol2()` | - | MOL2文件格式 |
-| XYZ文件 | PDB文件 | `xyz_to_pdb()` | - | 蛋白质数据库格式 |
-| XYZ文件 | CIF文件 | `xyz_to_cif()` | - | 晶体信息框架格式 |
-| XYZ文件 | InChI | `xyz_to_inchi()` | - | IUPAC标准化学标识符 |
-| XYZ文件 | InChIKey | `xyz_to_inchikey()` | - | InChI的哈希键 |
-| XYZ文件 | SMILES | `xyz_to_smiles()` | - | 简化分子线性输入规范 |
-| XYZ字符串 | MOL字符串 | - | `xyz_to_mol_string()` | MOL文件格式 |
-| XYZ字符串 | SDF字符串 | - | `xyz_to_sdf_string()` | 结构数据文件 |
-| XYZ字符串 | PDB字符串 | - | `xyz_to_pdb_string()` | 蛋白质数据库格式 |
-| XYZ字符串 | MOL2字符串 | - | `xyz_to_mol2_string()` | MOL2文件格式 |
-| XYZ字符串 | CIF字符串 | - | `xyz_to_cif_string()` | 晶体信息框架格式 |
-| XYZ字符串 | InChI | - | `xyz_to_inchi()` | IUPAC标准化学标识符 |
-| XYZ字符串 | InChIKey | - | `xyz_to_inchikey()` | InChI的哈希键 |
-| XYZ字符串 | SMILES | - | `xyz_to_smiles()` | 简化分子线性输入规范 |
-| XYZ字符串 | RDKit对象 | - | `xyz_to_rdkit()` | RDKit分子对象 |
-| XYZ字符串 | 键级矩阵 | - | `xyz_to_bond_matrix()` | NumPy矩阵表示 |
+```python
+from mol_conversion import split_multiframe_xyz, split_multiframe_xyz_with_comments
 
-## 选择指南
+# Split multi-frame XYZ into individual frames
+frames = split_multiframe_xyz(multiframe_xyz_string)
 
-### 使用文件转换（mol_conversion.py）的情况：
-- 需要输出文件到磁盘
-- 处理大型分子文件
-- 简单的单次转换
-- 需要完整的Open Babel格式支持
+# Split with comments for additional metadata
+frames, comments = split_multiframe_xyz_with_comments(multiframe_xyz_string)
+```
 
-### 使用内存转换（memory_conversion.py）的情况：
-- 需要链式转换处理
-- 内存充足且追求性能
-- 批量处理中小型分子
-- 需要访问中间结果（如键级矩阵）
+## API Reference
 
-### 使用分子分析工具（utils.py）的情况：
-- 计算分子特征和编码
-- 标准化分子坐标
-- 图神经网络相关处理
+### FileConversion Class
 
-## 性能考虑
+Static methods for file-to-file conversions:
 
-- **内存转换**: 速度更快但内存占用较高
-- **文件转换**: 内存占用低但涉及I/O开销
-- **GCN编码**: 基于原子邻居关系，适合分子机器学习
+- `xyz_to_sdf(xyz_file, sdf_file)` - Convert XYZ to SDF
+- `xyz_to_inchi(xyz_file)` - Convert XYZ to InChI string
+- `xyz_to_inchikey(xyz_file)` - Convert XYZ to InChIKey string
+- `xyz_to_smiles(xyz_file)` - Convert XYZ to SMILES string
+- `xyz_to_pdb(xyz_file, pdb_file)` - Convert XYZ to PDB
+- `xyz_to_mol2(xyz_file, mol2_file)` - Convert XYZ to MOL2
+- `xyz_to_cif(xyz_file, cif_file)` - Convert XYZ to CIF
+- `merge_sdf_files(sdf_list, output_path, need_remove=False)` - Merge multiple SDF files
 
-## 示例文件
+### MemoryConversion Class
 
-查看 `mol_conversion.ipynb` 获取完整的使用示例和可视化结果。
+Static methods for memory-to-memory conversions:
 
-## 许可证
+- `xyz_to_mol_string(xyz_string)` - Convert XYZ to MOL string
+- `xyz_to_rdkit_mol(xyz_string)` - Convert XYZ to RDKit Mol object
+- `xyz_to_bond_order_matrix(xyz_string)` - Generate bond order matrix
+- `xyz_to_inchi_string(xyz_string)` - Convert XYZ to InChI string
+- `xyz_to_inchikey_string(xyz_string)` - Convert XYZ to InChIKey string
+- `xyz_to_smiles_string(xyz_string)` - Convert XYZ to SMILES string
+- `xyz_to_sdf_string(xyz_string)` - Convert XYZ to SDF string
+- `xyz_to_pdb_string(xyz_string)` - Convert XYZ to PDB string
+- `xyz_to_mol2_string(xyz_string)` - Convert XYZ to MOL2 string
+- `xyz_to_cif_string(xyz_string)` - Convert XYZ to CIF string
 
-本项目遵循MIT许可证。
+### GCNEncoding Class
 
-## 贡献
+Generate atom-level GCN-style encodings:
 
-欢迎提交Issue和Pull Request来改进这个工具！
+- `__init__(xyz_string)` - Initialize with XYZ string
+- `encodings` property - Returns dictionary with 'gcn0', 'gcn1', 'gcn2' encodings
+
+### Utility Functions
+
+- `split_multiframe_xyz(xyz_string)` - Split multi-frame XYZ into list of frames
+- `split_multiframe_xyz_with_comments(xyz_string)` - Split with comments
+- `xyz_string_to_bond_order_matrix(xyz_string)` - Generate bond order matrix
+
+## Testing
+
+The package includes comprehensive tests using real molecular data:
+
+```bash
+# Run all tests
+pytest
+
+# Run tests with coverage
+pytest --cov=mol_conversion
+
+# Run specific module tests
+pytest tests/test_file_conversion.py
+pytest tests/test_memory_conversion.py
+pytest tests/test_utils.py
+
+# Run integration tests
+pytest tests/test_integration.py
+```
+
+### Test Features
+
+- **Real molecular data** - Tests use actual 70-atom molecules
+- **Dependency detection** - Automatically skips tests if Open Babel unavailable
+- **Error handling** - Comprehensive error condition testing
+- **Performance testing** - Large molecule handling verification
+- **Integration testing** - Cross-module consistency validation
+
+## Dependencies
+
+- **Python 3.8+**
+- **Open Babel** (install via conda) - Core molecular conversion
+- **NumPy** - Numerical computations
+- **RDKit** - Chemical informatics
+- **tqdm** - Progress bars
+
+## Project Structure
+
+```
+mol_conversion/
+├── src/mol_conversion/          # Source code
+├── tests/                       # Test suite
+├── tests/data/                  # Test data files
+├── docs/                        # Documentation
+├── pyproject.toml              # Modern packaging config
+└── README.md                   # This file
+```
+
+## License
+
+MIT License
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Changelog
+
+### v0.1.0
+- Initial release with core conversion functionality
+- GCN encoding support
+- Multi-frame XYZ processing
+- Comprehensive test suite
+- Modern src layout packaging
