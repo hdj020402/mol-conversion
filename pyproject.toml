@@ -49,10 +49,10 @@ Repository = "https://github.com/your-username/mol-conversion.git"
 "Bug Tracker" = "https://github.com/your-username/mol-conversion/issues"
 
 [tool.setuptools]
-packages = ["mol_conversion"]
+package-dir = {"" = "src"}
 
-[tool.setuptools.package-dir]
-mol_conversion = "."
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.black]
 line-length = 88

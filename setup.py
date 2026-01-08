@@ -14,8 +14,8 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/your-username/mol-conversion",
     license="MIT",
-    packages=find_packages(),
-    package_dir={"mol_conversion": "."},
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     python_requires=">=3.8",
     install_requires=[
         "numpy>=1.20.0",

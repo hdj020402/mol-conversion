@@ -2,10 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
 
 # C extensions
-*.c
+*.so
 
 # Distribution / packaging
 .Python
@@ -24,6 +23,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # PyInstaller
 *.manifest
@@ -43,7 +43,6 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
-*.py,cover
 .hypothesis/
 .pytest_cache/
 
@@ -55,7 +54,6 @@ coverage.xml
 *.log
 local_settings.py
 db.sqlite3
-db.sqlite3-journal
 
 # Flask stuff:
 instance/
@@ -64,7 +62,7 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation docs/
+# Sphinx documentation
 docs/_build/
 
 # PyBuilder
@@ -80,15 +78,8 @@ ipython_config.py
 # pyenv
 .python-version
 
-# pipenv
-Pipfile.lock
-
-# PEP 582
-__pypackages__/
-
-# Celery stuff
+# celery beat schedule file
 celerybeat-schedule
-celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
@@ -123,49 +114,14 @@ dmypy.json
 # IDE
 .vscode/
 .idea/
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Log files
-logs/
-*.log
-
-# Test files
-test_xyz_*.xyz
-tmp/
-temp/
-
-# Database
-*.db
-
-# Virtual environment (if using conda or virtualenv)
-venv/
-env/
-ENV/
-
-# Compiled files
-*.o
-*.pyd
-
-# Backup files
-*~
-*.bak
 *.swp
 *.swo
+*~
 
-# Custom for molecular fragmentation project
-/tests/unit/performance/*.log
-/tests/data
-*.pyc
-*.xyz.tmp
-plan/
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
 IFLOW.md
 PYTHON_STYLE.md
-

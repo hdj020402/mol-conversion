@@ -37,29 +37,6 @@ def xyz_string_to_bond_order_matrix(xyz_str):
 
     return bond_matrix
 
-# ===== 示例 =====
-# if __name__ == "__main__":
-#     xyz_example = """14
-# Energy: -158.36316482
-#  C     1.965628    -0.044891     0.041336
-#  C    -1.928636     0.206074    -0.054869
-#  C    -0.547665    -0.397317     0.174957
-#  C     0.584659     0.558517    -0.188474
-#  H     0.479415     1.484663     0.402725
-#  H     0.479687     0.857511    -1.245797
-#  H    -0.442720    -0.696307     1.232280
-#  H    -0.442385    -1.323467    -0.416238
-#  H     2.101678    -0.324162     1.097821
-#  H     2.101862    -0.955927    -0.562083
-#  H     2.766586     0.658980    -0.226474
-#  H    -2.064698     0.485312    -1.111359
-#  H    -2.064872     1.117129     0.548524
-#  H    -2.729587    -0.497794     0.212971
-# """
-#     matrix = xyz_string_to_bond_order_matrix(xyz_example)
-#     print("键级矩阵：")
-#     print(matrix)
-
 class GCNEncoding:
     """
     Generate atom-level GCN-style encodings (GCN0, GCN1, GCN2) from an XYZ string.

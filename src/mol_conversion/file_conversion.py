@@ -22,10 +22,11 @@ class FileConversion:
             sdf_file (str): Output SDF file path
         """
         openbabel_cmd = f'obabel -ixyz {xyz_file} -osdf -O {sdf_file}'
-        subprocess.Popen(openbabel_cmd,
-                         shell=True,
-                         stdout=subprocess.DEVNULL,
-                         stderr=subprocess.DEVNULL)
+        subprocess.run(openbabel_cmd,
+                       shell=True,
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL,
+                       check=True)
 
     @staticmethod
     def xyz_to_inchi(xyz_file: str) -> str:
@@ -145,7 +146,7 @@ class FileConversion:
             pdb_file (str): Output PDB file path
         """
         openbabel_cmd = f'obabel -ixyz {xyz_file} -opdb -O {pdb_file}'
-        subprocess.Popen(openbabel_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(openbabel_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
     @staticmethod
     def xyz_to_mol2(xyz_file: str, mol2_file: str):
@@ -157,7 +158,7 @@ class FileConversion:
             mol2_file (str): Output MOL2 file path
         """
         openbabel_cmd = f'obabel -ixyz {xyz_file} -omol2 -O {mol2_file}'
-        subprocess.Popen(openbabel_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(openbabel_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
     @staticmethod
     def xyz_to_cif(xyz_file: str, cif_file: str):
@@ -169,7 +170,7 @@ class FileConversion:
             cif_file (str): Output CIF file path
         """
         openbabel_cmd = f'obabel -ixyz {xyz_file} -ocif -O {cif_file}'
-        subprocess.Popen(openbabel_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(openbabel_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
     @staticmethod
     def xyz_to_pdb_string(xyz_file: str) -> str:
