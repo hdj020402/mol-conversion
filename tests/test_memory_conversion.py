@@ -95,10 +95,13 @@ Y    1.000000    0.000000    0.000000
             pytest.skip("Open Babel not available")
         
         inchi = MemoryConversion.xyz_to_inchi_string(test_xyz_string)
+        inchi_fixedh = MemoryConversion.xyz_to_inchi_string(test_xyz_string, fixed_h=True)
         assert isinstance(inchi, str)
         assert len(inchi) > 0
-        # Basic InChI validation
         assert inchi.startswith("InChI=1S/")
+        assert isinstance(inchi_fixedh, str)
+        assert len(inchi_fixedh) > 0
+        assert inchi_fixedh.startswith("InChI=1/")
     
     def test_xyz_to_inchikey_string(self, test_xyz_string):
         """Test XYZ to InChIKey string conversion"""
