@@ -29,19 +29,25 @@ class FileConversion:
                        check=True)
 
     @staticmethod
-    def xyz_to_inchi(xyz_file: str) -> str:
+    def xyz_to_inchi(xyz_file: str, fixed_h: bool = False) -> str:
         """
         Convert XYZ file to InChI format using Open Babel program (file-to-string conversion)
         
         Args:
             xyz_file (str): Input XYZ file path
+            fixed_h (bool): Whether to generate InChI with fixed hydrogen atoms (adds -xF flag)
             
         Returns:
             str: InChI format string
         """
         if not os.path.exists(xyz_file):
             raise FileNotFoundError(f'File {xyz_file} does not exist!')
-        openbabel_cmd = f'obabel -ixyz {xyz_file} -oinchi --readconformer'
+        
+        cmd_options = '--readconformer'
+        if fixed_h:
+            cmd_options += ' -xF'
+        
+        openbabel_cmd = f'obabel -ixyz {xyz_file} -oinchi {cmd_options}'
 
         result = subprocess.run(
             openbabel_cmd,

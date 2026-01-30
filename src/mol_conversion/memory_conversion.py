@@ -85,18 +85,26 @@ class MemoryConversion:
         return bond_matrix
 
     @staticmethod
-    def xyz_to_inchi_string(xyz_str: str) -> str:
+    def xyz_to_inchi_string(xyz_str: str, fixed_h: bool = False) -> str:
         """
         Convert XYZ string to InChI format (memory conversion)
         
         Args:
             xyz_str (str): XYZ format molecular structure string
+            fixed_h (bool): Whether to generate InChI with fixed hydrogen atoms (adds -xF flag)
             
         Returns:
             str: InChI format string
         """
         mol = pybel.readstring("xyz", xyz_str)
-        inchi_str = mol.write("inchi")
+        ob_conv = openbabel.OBConversion()
+        ob_conv.SetOutFormat("inchi")
+        ob_conv.AddOption("readconformer", openbabel.OBConversion.INOPTIONS)
+        
+        if fixed_h:
+            ob_conv.AddOption("F", openbabel.OBConversion.OUTOPTIONS)
+        
+        inchi_str = ob_conv.WriteString(mol.OBMol)
         return inchi_str.strip()
 
     @staticmethod
