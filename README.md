@@ -32,7 +32,7 @@ pip install mol-conversion
 Or for development:
 
 ```bash
-git clone https://github.com/your-username/mol-conversion.git
+git clone https://github.com/hdj020402/mol-conversion.git
 cd mol-conversion
 pip install -e .
 ```

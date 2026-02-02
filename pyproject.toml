@@ -7,7 +7,7 @@ name = "mol-conversion"
 version = "0.1.0"
 description = "Molecular conversion tools for XYZ format processing"
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Dejun Hu", email = "hudejun2002@gmail.com"}
 ]
 readme = "README.md"
 license = {text = "MIT"}
@@ -43,10 +43,10 @@ openbabel = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-username/mol-conversion"
-Documentation = "https://github.com/your-username/mol-conversion#readme"
-Repository = "https://github.com/your-username/mol-conversion.git"
-"Bug Tracker" = "https://github.com/your-username/mol-conversion/issues"
+Homepage = "https://github.com/hdj020402/mol-conversion"
+Documentation = "https://github.com/hdj020402/mol-conversion#readme"
+Repository = "https://github.com/hdj020402/mol-conversion.git"
+"Bug Tracker" = "https://github.com/hdj020402/mol-conversion/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
