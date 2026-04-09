@@ -28,6 +28,7 @@ dependencies = [
     "numpy>=1.20.0",
     "rdkit>=2020.03.5",
     "tqdm>=4.60.0",
+    "openbabel-wheel>=3.1.1.19",
 ]
 
 [project.optional-dependencies]
@@ -37,9 +38,6 @@ dev = [
     "black>=22.0",
     "flake8>=4.0",
     "mypy>=1.0",
-]
-openbabel = [
-    # Open Babel must be installed via conda: conda install openbabel -c conda-forge
 ]
 
 [project.urls]

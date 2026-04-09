@@ -21,7 +21,7 @@ setup(
         "numpy>=1.20.0",
         "rdkit>=2020.03.5",
         "tqdm>=4.60.0",
-        # Note: openbabel must be installed via conda: conda install openbabel -c conda-forge
+        "openbabel-wheel>=3.1.1.19",
     ],
     extras_require={
         "dev": [
@@ -30,7 +30,6 @@ setup(
             "black>=22.0",
             "flake8>=4.0",
         ],
-        # openbabel must be installed via conda: conda install openbabel -c conda-forge
     },
     classifiers=[
         "Development Status :: 4 - Beta",
