@@ -15,16 +15,6 @@ A comprehensive Python package for molecular structure format conversion, focusi
 
 ## Installation
 
-### Prerequisites
-
-This package requires Open Babel. Install it using conda:
-
-```bash
-conda install openbabel -c conda-forge
-```
-
-### Install the package
-
 ```bash
 pip install mol-conversion
 ```
@@ -113,6 +103,25 @@ frames = split_multiframe_xyz(multiframe_xyz_string)
 frames, comments = split_multiframe_xyz_with_comments(multiframe_xyz_string)
 ```
 
+### Log Level Configuration
+
+```python
+from mol_conversion import set_log_level, get_log_level
+
+# Get current log level (default: 'error')
+print(get_log_level())  # 'error'
+
+# Set log level
+set_log_level('none')     # Disable all logging
+set_log_level('error')    # Show only errors (default)
+set_log_level('warning')  # Show warnings and errors
+set_log_level('info')     # Show info, warnings, and errors
+set_log_level('debug')    # Show all log messages
+
+# Case-insensitive
+set_log_level('ERROR')    # Also works
+```
+
 ## API Reference
 
 ### FileConversion Class
@@ -156,6 +165,12 @@ Generate atom-level GCN-style encodings:
 - `split_multiframe_xyz_with_comments(xyz_string)` - Split with comments
 - `xyz_string_to_bond_order_matrix(xyz_string)` - Generate bond order matrix
 
+### Log Level Functions
+
+- `set_log_level(level)` - Set log level for Open Babel and RDKit
+  - `level`: One of `'none'`, `'error'`, `'warning'`, `'info'`, `'debug'`
+- `get_log_level()` - Get current log level
+
 ## Testing
 
 The package includes comprehensive tests using real molecular data:
@@ -187,7 +202,7 @@ pytest tests/test_integration.py
 ## Dependencies
 
 - **Python 3.8+**
-- **Open Babel** (install via conda) - Core molecular conversion
+- **openbabel-wheel** - Core molecular conversion (pip installable)
 - **NumPy** - Numerical computations
 - **RDKit** - Chemical informatics
 - **tqdm** - Progress bars
