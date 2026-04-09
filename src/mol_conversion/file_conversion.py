@@ -1,10 +1,7 @@
 import os
 import subprocess
 from rdkit import Chem
-from rdkit import RDLogger
 from tqdm import tqdm
-
-RDLogger.DisableLog('rdApp.*')
 
 class FileConversion:
     """

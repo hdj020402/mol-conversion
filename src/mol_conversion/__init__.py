@@ -17,10 +17,88 @@ __author__ = "Dejun Hu"
 __email__ = "hudejun2002@gmail.com"
 __license__ = "MIT"
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 # Core classes that don't require Open Babel
 from .file_conversion import FileConversion
+
+# Log level type
+LogLevel = Literal["none", "error", "warning", "info", "debug"]
+
+# Current log level (module-level state)
+_current_log_level: LogLevel = "error"
+
+
+def set_log_level(level: LogLevel) -> None:
+    """
+    Set the log level for Open Babel and RDKit libraries.
+    
+    Args:
+        level: Log level, one of 'none', 'error', 'warning', 'info', 'debug'.
+            - 'none': Disable all logging output
+            - 'error': Show only errors
+            - 'warning': Show warnings and errors
+            - 'info': Show info, warnings, and errors
+            - 'debug': Show all log messages
+    
+    Example:
+        >>> from mol_conversion import set_log_level
+        >>> set_log_level('none')  # Silence all logs
+        >>> set_log_level('error')  # Show only errors (default)
+    """
+    global _current_log_level
+    
+    level = level.lower()
+    valid_levels = ("none", "error", "warning", "info", "debug")
+    if level not in valid_levels:
+        raise ValueError(f"Invalid log level '{level}'. Must be one of: {valid_levels}")
+    
+    _current_log_level = level
+    
+    # Configure RDKit log level
+    from rdkit import RDLogger
+    logger = RDLogger.logger()
+    
+    if level == "none":
+        RDLogger.DisableLog('rdApp.*')
+    elif level == "error":
+        logger.setLevel(RDLogger.ERROR)
+    elif level == "warning":
+        logger.setLevel(RDLogger.WARNING)
+    elif level == "info":
+        logger.setLevel(RDLogger.INFO)
+    elif level == "debug":
+        logger.setLevel(RDLogger.DEBUG)
+    
+    # Configure Open Babel log level
+    from openbabel import openbabel
+    
+    # Open Babel log levels: 0=Error, 1=Warning, 2=Info, 3=Debug
+    level_map = {
+        "error": 0,
+        "warning": 1,
+        "info": 2,
+        "debug": 3,
+    }
+    
+    if level == "none":
+        openbabel.obErrorLog.StopLogging()
+    else:
+        openbabel.obErrorLog.SetOutputLevel(level_map[level])
+
+
+def get_log_level() -> LogLevel:
+    """
+    Get the current log level.
+    
+    Returns:
+        Current log level string.
+    """
+    return _current_log_level
+
+
+# Set default log level on import
+set_log_level("error")
 
 # Open Babel-dependent imports - these will be imported lazily
 _memory_conversion_imported = False
@@ -40,8 +118,8 @@ def _import_memory_conversion():
             _memory_conversion_imported = True
         except ImportError as e:
             raise ImportError(
-                f"MemoryConversion requires Open Babel. Please install with: "
-                f"conda install openbabel -c conda-forge. Original error: {e}"
+                f"MemoryConversion requires openbabel-wheel. Please install with: "
+                f"pip install openbabel-wheel. Original error: {e}"
             )
     return MemoryConversion
 
@@ -54,8 +132,8 @@ def _import_utils():
             _utils_imported = True
         except ImportError as e:
             raise ImportError(
-                f"Utils module requires Open Babel. Please install with: "
-                f"conda install openbabel -c conda-forge. Original error: {e}"
+                f"Utils module requires openbabel-wheel. Please install with: "
+                f"pip install openbabel-wheel. Original error: {e}"
             )
     return GCNEncoding, split_multiframe_xyz, split_multiframe_xyz_with_comments
 
@@ -77,5 +155,7 @@ __all__ = [
     "MemoryConversion", 
     "GCNEncoding",
     "split_multiframe_xyz",
-    "split_multiframe_xyz_with_comments"
+    "split_multiframe_xyz_with_comments",
+    "set_log_level",
+    "get_log_level",
 ]

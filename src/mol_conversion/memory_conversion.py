@@ -2,7 +2,6 @@ import os
 import numpy as np
 from openbabel import pybel, openbabel
 from rdkit import Chem
-from typing import Optional
 
 class MemoryConversion:
     """
