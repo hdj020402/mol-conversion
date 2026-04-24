@@ -1,14 +1,15 @@
-"""Tests for utils module"""
+"""Tests for utils and gcn_encoding modules"""
 
 import pytest
 import numpy as np
 from pathlib import Path
-from mol_conversion import GCNEncoding, split_multiframe_xyz, split_multiframe_xyz_with_comments
+from mol_conversion import GCNEncoder, split_multiframe_xyz, split_multiframe_xyz_with_comments
+from mol_conversion.gcn_encoding import GCNEncoder as GCNEncoderDirect
 
 
-class TestGCNEncoding:
-    """Test class for GCNEncoding"""
-    
+class TestGCNEncoder:
+    """Test class for GCNEncoder"""
+
     @pytest.fixture
     def test_xyz_string(self):
         """Real XYZ string from test data file"""
@@ -17,32 +18,31 @@ class TestGCNEncoding:
             return test_file.read_text()
         else:
             pytest.skip(f"Test file {test_file} not found")
-    
-    def test_gcn_encoding(self, test_xyz_string):
-        """Test GCN encoding with real XYZ file"""
-        # Skip test if Open Babel is not available
+
+    def test_gcn_encoding_from_xyz(self, test_xyz_string):
+        """Test GCN encoding with real XYZ file via from_xyz"""
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
-        
-        encoder = GCNEncoding(test_xyz_string)
+
+        encoder = GCNEncoder.from_xyz(test_xyz_string)
         encodings = encoder.encodings
-        
+
         # Check structure
         assert isinstance(encodings, dict)
         assert "gcn0" in encodings
         assert "gcn1" in encodings
         assert "gcn2" in encodings
-        
+
         # Real file has 70 atoms
         assert len(encodings["gcn0"]) == 70
         assert len(encodings["gcn1"]) == 70
         assert len(encodings["gcn2"]) == 70
-        
+
         # Should have some non-empty encodings (heavy atoms)
         gcn0 = encodings["gcn0"]
         non_empty_count = sum(1 for encoding in gcn0 if encoding != "")
         assert non_empty_count > 0  # Should have some heavy atoms
-        
+
         # Check that GCN1 and GCN2 are more complex than GCN0
         gcn1 = encodings["gcn1"]
         gcn2 = encodings["gcn2"]
@@ -52,56 +52,142 @@ class TestGCNEncoding:
                 assert len(gcn1[i]) >= len(gcn0[i])
                 # GCN2 should be at least as complex as GCN1
                 assert len(gcn2[i]) >= len(gcn1[i])
-    
-    def test_gcn_encoding_progression(self, test_xyz_string):
-        """Test that GCN encodings become progressively more complex"""
-        # Skip test if Open Babel is not available
+
+    def test_gcn_encoding_from_smiles(self):
+        """Test GCN encoding from SMILES string"""
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
-        
-        encoder = GCNEncoding(test_xyz_string)
+
+        # Ethanol: CCO
+        encoder = GCNEncoder.from_smiles("CCO")
         encodings = encoder.encodings
-        
+
+        assert isinstance(encodings, dict)
+        assert "gcn0" in encodings
+
+        # Should have atoms
+        assert len(encoder.atoms) > 0
+        # Heavy atoms should have non-empty encodings
+        non_empty = [e for e in encodings["gcn0"] if e != ""]
+        assert len(non_empty) > 0
+
+    def test_gcn_encoding_from_inchi(self):
+        """Test GCN encoding from InChI string"""
+        if not self._is_openbabel_available():
+            pytest.skip("Open Babel not available")
+
+        # Ethanol InChI
+        encoder = GCNEncoder.from_inchi("InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3")
+        encodings = encoder.encodings
+
+        assert isinstance(encodings, dict)
+        assert len(encoder.atoms) > 0
+        non_empty = [e for e in encodings["gcn0"] if e != ""]
+        assert len(non_empty) > 0
+
+    def test_gcn_encoding_from_sdf(self):
+        """Test GCN encoding from SDF string"""
+        if not self._is_openbabel_available():
+            pytest.skip("Open Babel not available")
+
+        # Minimal methane SDF
+        sdf_str = """methane
+     RDKit          3D
+
+  5  4  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.6292    0.6292    0.6292 H   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.6292   -0.6292    0.6292 H   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.6292    0.6292   -0.6292 H   0  0  0  0  0  0  0  0  0  0  0  0
+    0.6292   -0.6292   -0.6292 H   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0
+  1  3  1  0
+  1  4  1  0
+  1  5  1  0
+M  END
+"""
+        encoder = GCNEncoder.from_sdf(sdf_str)
+        encodings = encoder.encodings
+
+        assert isinstance(encodings, dict)
+        # 5 atoms: 1 C + 4 H
+        assert len(encoder.atoms) == 5
+        # C should have encoding C04
+        non_empty = [e for e in encodings["gcn0"] if e != ""]
+        assert len(non_empty) == 1
+        assert non_empty[0] == "C04"
+
+    def test_gcn_encoding_cross_format_consistency(self):
+        """Test that same molecule via different formats gives consistent GCN0 heavy-atom encodings"""
+        if not self._is_openbabel_available():
+            pytest.skip("Open Babel not available")
+
+        # Benzene via SMILES
+        enc_smiles = GCNEncoder.from_smiles("c1ccccc1")
+        # Benzene via InChI
+        enc_inchi = GCNEncoder.from_inchi("InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H")
+
+        # Heavy atom GCN0 encodings should match
+        smiles_gcn0 = [e for e in enc_smiles.gcn0 if e != ""]
+        inchi_gcn0 = [e for e in enc_inchi.gcn0 if e != ""]
+
+        assert sorted(smiles_gcn0) == sorted(inchi_gcn0)
+
+    def test_gcn_encoding_progression(self, test_xyz_string):
+        """Test that GCN encodings become progressively more complex"""
+        if not self._is_openbabel_available():
+            pytest.skip("Open Babel not available")
+
+        encoder = GCNEncoder.from_xyz(test_xyz_string)
+        encodings = encoder.encodings
+
         gcn0 = encodings["gcn0"]
         gcn1 = encodings["gcn1"]
         gcn2 = encodings["gcn2"]
-        
+
         # For carbon atoms (non-hydrogen), encodings should get progressively more complex
         for i in range(len(gcn0)):
             if gcn0[i] != "":  # Heavy atom
                 # GCN1 should be at least as complex as GCN0
                 assert len(gcn1[i]) >= len(gcn0[i])
-                
+
                 # GCN2 should be at least as complex as GCN1
                 assert len(gcn2[i]) >= len(gcn1[i])
-                
+
                 # Check for expected delimiters
                 if len(gcn1[i]) > len(gcn0[i]):
                     assert "(" in gcn1[i]  # GCN1 uses parentheses
-                    
+
                 if len(gcn2[i]) > len(gcn1[i]):
                     assert "[" in gcn2[i]  # GCN2 uses brackets
-    
+
     def test_gcn_encoding_invalid_xyz(self):
         """Test GCN encoding with invalid XYZ string"""
-        # Skip test if Open Babel is not available
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
-        
+
         invalid_xyz = """1
 Invalid atom
 X    0.000000    0.000000    0.000000
 """
-        
+
         # Should handle invalid atoms gracefully
         try:
-            encoder = GCNEncoding(invalid_xyz)
+            encoder = GCNEncoder.from_xyz(invalid_xyz)
             encodings = encoder.encodings
             # Unknown atom should be treated as heavy atom
             assert len(encodings["gcn0"]) == 1
         except Exception:
             # It's acceptable if Open Babel raises an exception
             pass
+
+    def test_direct_import(self, test_xyz_string):
+        """Test that GCNEncoder can be imported directly from gcn_encoding module"""
+        if not self._is_openbabel_available():
+            pytest.skip("Open Babel not available")
+
+        encoder = GCNEncoderDirect.from_xyz(test_xyz_string)
+        assert isinstance(encoder, GCNEncoder)
 
     def _is_openbabel_available(self):
         """Check if Open Babel Python bindings are available"""

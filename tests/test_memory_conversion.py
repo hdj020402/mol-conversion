@@ -3,11 +3,11 @@
 import pytest
 import numpy as np
 from pathlib import Path
-from mol_conversion import MemoryConversion
+from mol_conversion import MemoryConverter
 
 
-class TestMemoryConversion:
-    """Test class for MemoryConversion methods"""
+class TestMemoryConverter:
+    """Test class for MemoryConverter methods"""
     
     @pytest.fixture
     def test_xyz_string(self):
@@ -24,7 +24,7 @@ class TestMemoryConversion:
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
         
-        mol_string = MemoryConversion.xyz_to_mol_string(test_xyz_string)
+        mol_string = MemoryConverter.xyz_to_mol_string(test_xyz_string)
         assert isinstance(mol_string, str)
         assert len(mol_string) > 0
         # Basic MOL file validation
@@ -40,7 +40,7 @@ class TestMemoryConversion:
         if not self._is_rdkit_available():
             pytest.skip("RDKit not available")
         
-        mol = MemoryConversion.xyz_to_rdkit_mol(test_xyz_string)
+        mol = MemoryConverter.xyz_to_rdkit_mol(test_xyz_string)
         assert mol is not None
         # Real file has 70 atoms
         assert mol.GetNumAtoms() == 70
@@ -63,7 +63,7 @@ Y    1.000000    0.000000    0.000000
 """
         
         # Should not raise an exception, but might return None
-        mol = MemoryConversion.xyz_to_rdkit_mol(invalid_xyz)
+        mol = MemoryConverter.xyz_to_rdkit_mol(invalid_xyz)
         # The behavior depends on Open Babel and RDKit versions
         # Either it returns None or creates a molecule with unknown atoms
         assert mol is None or mol.GetNumAtoms() == 2
@@ -74,7 +74,7 @@ Y    1.000000    0.000000    0.000000
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
         
-        bond_matrix = MemoryConversion.xyz_to_bond_order_matrix(test_xyz_string)
+        bond_matrix = MemoryConverter.xyz_to_bond_order_matrix(test_xyz_string)
         assert isinstance(bond_matrix, np.ndarray)
         # Real file has 70 atoms
         assert bond_matrix.shape == (70, 70)
@@ -94,8 +94,8 @@ Y    1.000000    0.000000    0.000000
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
         
-        inchi = MemoryConversion.xyz_to_inchi_string(test_xyz_string)
-        inchi_fixedh = MemoryConversion.xyz_to_inchi_string(test_xyz_string, fixed_h=True)
+        inchi = MemoryConverter.xyz_to_inchi_string(test_xyz_string)
+        inchi_fixedh = MemoryConverter.xyz_to_inchi_string(test_xyz_string, fixed_h=True)
         assert isinstance(inchi, str)
         assert len(inchi) > 0
         assert inchi.startswith("InChI=1S/")
@@ -109,7 +109,7 @@ Y    1.000000    0.000000    0.000000
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
         
-        inchikey = MemoryConversion.xyz_to_inchikey_string(test_xyz_string)
+        inchikey = MemoryConverter.xyz_to_inchikey_string(test_xyz_string)
         assert isinstance(inchikey, str)
         assert len(inchikey) == 27  # Standard InChIKey length
     
@@ -119,7 +119,7 @@ Y    1.000000    0.000000    0.000000
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
         
-        smiles = MemoryConversion.xyz_to_smiles_string(test_xyz_string)
+        smiles = MemoryConverter.xyz_to_smiles_string(test_xyz_string)
         assert isinstance(smiles, str)
         assert len(smiles) > 0
     
@@ -129,7 +129,7 @@ Y    1.000000    0.000000    0.000000
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
         
-        sdf_string = MemoryConversion.xyz_to_sdf_string(test_xyz_string)
+        sdf_string = MemoryConverter.xyz_to_sdf_string(test_xyz_string)
         assert isinstance(sdf_string, str)
         assert len(sdf_string) > 0
         # Basic SDF validation
@@ -141,7 +141,7 @@ Y    1.000000    0.000000    0.000000
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
         
-        pdb_string = MemoryConversion.xyz_to_pdb_string(test_xyz_string)
+        pdb_string = MemoryConverter.xyz_to_pdb_string(test_xyz_string)
         assert isinstance(pdb_string, str)
         assert len(pdb_string) > 0
         # Basic PDB validation
@@ -153,7 +153,7 @@ Y    1.000000    0.000000    0.000000
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
         
-        mol2_string = MemoryConversion.xyz_to_mol2_string(test_xyz_string)
+        mol2_string = MemoryConverter.xyz_to_mol2_string(test_xyz_string)
         assert isinstance(mol2_string, str)
         assert len(mol2_string) > 0
         # Basic MOL2 validation
@@ -165,7 +165,7 @@ Y    1.000000    0.000000    0.000000
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
         
-        cif_string = MemoryConversion.xyz_to_cif_string(test_xyz_string)
+        cif_string = MemoryConverter.xyz_to_cif_string(test_xyz_string)
         assert isinstance(cif_string, str)
         assert len(cif_string) > 0
         # Basic CIF validation
@@ -178,31 +178,31 @@ Y    1.000000    0.000000    0.000000
             pytest.skip("Open Babel not available")
         
         # Test all conversion methods
-        mol_string = MemoryConversion.xyz_to_mol_string(test_xyz_string)
+        mol_string = MemoryConverter.xyz_to_mol_string(test_xyz_string)
         assert isinstance(mol_string, str) and len(mol_string) > 0
         
-        bond_matrix = MemoryConversion.xyz_to_bond_order_matrix(test_xyz_string)
+        bond_matrix = MemoryConverter.xyz_to_bond_order_matrix(test_xyz_string)
         assert isinstance(bond_matrix, np.ndarray) and bond_matrix.size > 0
         
-        inchi = MemoryConversion.xyz_to_inchi_string(test_xyz_string)
+        inchi = MemoryConverter.xyz_to_inchi_string(test_xyz_string)
         assert isinstance(inchi, str) and len(inchi) > 0
         
-        inchikey = MemoryConversion.xyz_to_inchikey_string(test_xyz_string)
+        inchikey = MemoryConverter.xyz_to_inchikey_string(test_xyz_string)
         assert isinstance(inchikey, str) and len(inchikey) == 27
         
-        smiles = MemoryConversion.xyz_to_smiles_string(test_xyz_string)
+        smiles = MemoryConverter.xyz_to_smiles_string(test_xyz_string)
         assert isinstance(smiles, str) and len(smiles) > 0
         
-        sdf_string = MemoryConversion.xyz_to_sdf_string(test_xyz_string)
+        sdf_string = MemoryConverter.xyz_to_sdf_string(test_xyz_string)
         assert isinstance(sdf_string, str) and len(sdf_string) > 0
         
-        pdb_string = MemoryConversion.xyz_to_pdb_string(test_xyz_string)
+        pdb_string = MemoryConverter.xyz_to_pdb_string(test_xyz_string)
         assert isinstance(pdb_string, str) and len(pdb_string) > 0
         
-        mol2_string = MemoryConversion.xyz_to_mol2_string(test_xyz_string)
+        mol2_string = MemoryConverter.xyz_to_mol2_string(test_xyz_string)
         assert isinstance(mol2_string, str) and len(mol2_string) > 0
         
-        cif_string = MemoryConversion.xyz_to_cif_string(test_xyz_string)
+        cif_string = MemoryConverter.xyz_to_cif_string(test_xyz_string)
         assert isinstance(cif_string, str) and len(cif_string) > 0
     
     def test_invalid_xyz_string(self):
@@ -219,7 +219,7 @@ X    0.000000    0.000000    0.000000
         # Should not raise exceptions for invalid input
         # The behavior depends on Open Babel's handling of unknown atoms
         try:
-            mol_string = MemoryConversion.xyz_to_mol_string(invalid_xyz)
+            mol_string = MemoryConverter.xyz_to_mol_string(invalid_xyz)
             assert isinstance(mol_string, str)
         except Exception:
             # It's acceptable if Open Babel raises an exception for invalid input

@@ -5,11 +5,11 @@ import os
 import tempfile
 import subprocess
 from pathlib import Path
-from mol_conversion import FileConversion
+from mol_conversion import FileConverter
 
 
-class TestFileConversion:
-    """Test class for FileConversion methods"""
+class TestFileConverter:
+    """Test class for FileConverter methods"""
     
     @pytest.fixture
     def test_xyz_file(self):
@@ -26,7 +26,7 @@ class TestFileConversion:
         if not os.path.exists(test_xyz_file):
             pytest.skip(f"Test file {test_xyz_file} not found")
         
-        inchi = FileConversion.xyz_to_inchi(test_xyz_file)
+        inchi = FileConverter.xyz_to_inchi(test_xyz_file)
         assert isinstance(inchi, str)
         assert len(inchi) > 0
         # Basic InChI validation
@@ -41,7 +41,7 @@ class TestFileConversion:
         if not os.path.exists(test_xyz_file):
             pytest.skip(f"Test file {test_xyz_file} not found")
         
-        inchikey = FileConversion.xyz_to_inchikey(test_xyz_file)
+        inchikey = FileConverter.xyz_to_inchikey(test_xyz_file)
         assert isinstance(inchikey, str)
         assert len(inchikey) == 27  # Standard InChIKey length
     
@@ -54,7 +54,7 @@ class TestFileConversion:
         if not os.path.exists(test_xyz_file):
             pytest.skip(f"Test file {test_xyz_file} not found")
         
-        smiles = FileConversion.xyz_to_smiles(test_xyz_file)
+        smiles = FileConverter.xyz_to_smiles(test_xyz_file)
         assert isinstance(smiles, str)
         assert len(smiles) > 0
     
@@ -71,7 +71,7 @@ class TestFileConversion:
             sdf_file = f.name
         
         try:
-            FileConversion.xyz_to_sdf(test_xyz_file, sdf_file)
+            FileConverter.xyz_to_sdf(test_xyz_file, sdf_file)
             assert os.path.exists(sdf_file)
             assert os.path.getsize(sdf_file) > 0
             # Basic SDF validation
@@ -95,7 +95,7 @@ class TestFileConversion:
             pdb_file = f.name
         
         try:
-            FileConversion.xyz_to_pdb(test_xyz_file, pdb_file)
+            FileConverter.xyz_to_pdb(test_xyz_file, pdb_file)
             assert os.path.exists(pdb_file)
             assert os.path.getsize(pdb_file) > 0
         finally:
@@ -111,7 +111,7 @@ class TestFileConversion:
         if not os.path.exists(test_xyz_file):
             pytest.skip(f"Test file {test_xyz_file} not found")
         
-        pdb_string = FileConversion.xyz_to_pdb_string(test_xyz_file)
+        pdb_string = FileConverter.xyz_to_pdb_string(test_xyz_file)
         assert isinstance(pdb_string, str)
         assert len(pdb_string) > 0
         # Basic PDB validation
@@ -126,7 +126,7 @@ class TestFileConversion:
         if not os.path.exists(test_xyz_file):
             pytest.skip(f"Test file {test_xyz_file} not found")
         
-        mol2_string = FileConversion.xyz_to_mol2_string(test_xyz_file)
+        mol2_string = FileConverter.xyz_to_mol2_string(test_xyz_file)
         assert isinstance(mol2_string, str)
         assert len(mol2_string) > 0
         # Basic MOL2 validation
@@ -141,7 +141,7 @@ class TestFileConversion:
         if not os.path.exists(test_xyz_file):
             pytest.skip(f"Test file {test_xyz_file} not found")
         
-        cif_string = FileConversion.xyz_to_cif_string(test_xyz_file)
+        cif_string = FileConverter.xyz_to_cif_string(test_xyz_file)
         assert isinstance(cif_string, str)
         assert len(cif_string) > 0
         # Basic CIF validation
@@ -150,7 +150,7 @@ class TestFileConversion:
     def test_xyz_to_inchi_file_not_found(self):
         """Test XYZ to InChI conversion with non-existent file"""
         with pytest.raises(FileNotFoundError):
-            FileConversion.xyz_to_inchi("nonexistent.xyz")
+            FileConverter.xyz_to_inchi("nonexistent.xyz")
     
     def _is_openbabel_available(self):
         """Check if Open Babel is available on the system"""

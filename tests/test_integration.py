@@ -4,7 +4,7 @@ import pytest
 import tempfile
 import os
 from pathlib import Path
-from mol_conversion import FileConversion, MemoryConversion, GCNEncoding, split_multiframe_xyz
+from mol_conversion import FileConverter, MemoryConverter, GCNEncoder, split_multiframe_xyz
 
 
 class TestIntegration:
@@ -34,16 +34,16 @@ class TestIntegration:
         if not os.path.exists(test_xyz_file):
             pytest.skip(f"Test file {test_xyz_file} not found")
         
-        # Convert using FileConversion
-        file_inchi = FileConversion.xyz_to_inchi(test_xyz_file)
-        file_smiles = FileConversion.xyz_to_smiles(test_xyz_file)
+        # Convert using FileConverter
+        file_inchi = FileConverter.xyz_to_inchi(test_xyz_file)
+        file_smiles = FileConverter.xyz_to_smiles(test_xyz_file)
         
-        # Read XYZ content and convert using MemoryConversion
+        # Read XYZ content and convert using MemoryConverter
         with open(test_xyz_file, 'r') as f:
             xyz_content = f.read()
         
-        memory_inchi = MemoryConversion.xyz_to_inchi_string(xyz_content)
-        memory_smiles = MemoryConversion.xyz_to_smiles_string(xyz_content)
+        memory_inchi = MemoryConverter.xyz_to_inchi_string(xyz_content)
+        memory_smiles = MemoryConverter.xyz_to_smiles_string(xyz_content)
         
         # Results should be consistent
         assert file_inchi == memory_inchi
@@ -63,12 +63,12 @@ class TestIntegration:
             original_xyz = f.read()
         
         # Convert to MOL string
-        mol_string = MemoryConversion.xyz_to_mol_string(original_xyz)
+        mol_string = MemoryConverter.xyz_to_mol_string(original_xyz)
         assert len(mol_string) > 0
         
         # Convert MOL back to RDKit mol and verify
         if self._is_rdkit_available():
-            rdkit_mol = MemoryConversion.xyz_to_rdkit_mol(original_xyz)
+            rdkit_mol = MemoryConverter.xyz_to_rdkit_mol(original_xyz)
             assert rdkit_mol is not None
             # Real file has 70 atoms
             assert rdkit_mol.GetNumAtoms() == 70
@@ -80,7 +80,7 @@ class TestIntegration:
             pytest.skip("Open Babel not available")
         
         # Generate GCN encodings
-        encoder = GCNEncoding(test_xyz_string)
+        encoder = GCNEncoder.from_xyz(test_xyz_string)
         encodings = encoder.encodings
         
         # Verify structure
@@ -105,16 +105,16 @@ class TestIntegration:
         # Test conversion of each frame
         for i, frame in enumerate(frames):
             # Convert to InChI
-            inchi = MemoryConversion.xyz_to_inchi_string(frame)
+            inchi = MemoryConverter.xyz_to_inchi_string(frame)
             assert isinstance(inchi, str)
             assert len(inchi) > 0
             
             # Convert to bond order matrix
-            bond_matrix = MemoryConversion.xyz_to_bond_order_matrix(frame)
+            bond_matrix = MemoryConverter.xyz_to_bond_order_matrix(frame)
             assert bond_matrix.shape[0] > 0  # Should have atoms
             
             # Generate GCN encodings
-            encoder = GCNEncoding(frame)
+            encoder = GCNEncoder.from_xyz(frame)
             encodings = encoder.encodings
             assert len(encodings["gcn0"]) == bond_matrix.shape[0]
     
@@ -128,25 +128,25 @@ class TestIntegration:
             pytest.skip(f"Test file {test_xyz_file} not found")
         
         # Step 1: File to various formats
-        inchi = FileConversion.xyz_to_inchi(test_xyz_file)
-        inchikey = FileConversion.xyz_to_inchikey(test_xyz_file)
-        smiles = FileConversion.xyz_to_smiles(test_xyz_file)
+        inchi = FileConverter.xyz_to_inchi(test_xyz_file)
+        inchikey = FileConverter.xyz_to_inchikey(test_xyz_file)
+        smiles = FileConverter.xyz_to_smiles(test_xyz_file)
         
         # Step 2: Read file content for memory operations
         with open(test_xyz_file, 'r') as f:
             xyz_content = f.read()
         
         # Step 3: Memory conversions
-        mol_string = MemoryConversion.xyz_to_mol_string(xyz_content)
-        sdf_string = MemoryConversion.xyz_to_sdf_string(xyz_content)
-        pdb_string = MemoryConversion.xyz_to_pdb_string(xyz_content)
+        mol_string = MemoryConverter.xyz_to_mol_string(xyz_content)
+        sdf_string = MemoryConverter.xyz_to_sdf_string(xyz_content)
+        pdb_string = MemoryConverter.xyz_to_pdb_string(xyz_content)
         
         # Step 4: Generate GCN encodings
-        encoder = GCNEncoding(xyz_content)
+        encoder = GCNEncoder.from_xyz(xyz_content)
         encodings = encoder.encodings
         
         # Step 5: Bond order matrix
-        bond_matrix = MemoryConversion.xyz_to_bond_order_matrix(xyz_content)
+        bond_matrix = MemoryConverter.xyz_to_bond_order_matrix(xyz_content)
         
         # Verify all results are valid
         assert isinstance(inchi, str) and len(inchi) > 0
@@ -162,7 +162,7 @@ class TestIntegration:
         """Test error handling consistency across modules"""
         # Test file not found
         with pytest.raises(FileNotFoundError):
-            FileConversion.xyz_to_inchi("nonexistent.xyz")
+            FileConverter.xyz_to_inchi("nonexistent.xyz")
         
         # Test invalid XYZ content
         invalid_xyz = """1
@@ -173,7 +173,7 @@ X    0.000000    0.000000    0.000000
         # Memory conversion should handle invalid input gracefully
         if self._is_openbabel_available():
             try:
-                result = MemoryConversion.xyz_to_inchi_string(invalid_xyz)
+                result = MemoryConverter.xyz_to_inchi_string(invalid_xyz)
                 # Should either return a result or raise an exception
                 assert isinstance(result, str)
             except Exception:
@@ -187,15 +187,15 @@ X    0.000000    0.000000    0.000000
             pytest.skip("Open Babel not available")
         
         # Test memory conversion with large molecule
-        inchi = MemoryConversion.xyz_to_inchi_string(test_xyz_string)
+        inchi = MemoryConverter.xyz_to_inchi_string(test_xyz_string)
         assert isinstance(inchi, str) and len(inchi) > 0
         
         # Test bond order matrix with large molecule
-        bond_matrix = MemoryConversion.xyz_to_bond_order_matrix(test_xyz_string)
+        bond_matrix = MemoryConverter.xyz_to_bond_order_matrix(test_xyz_string)
         assert bond_matrix.shape == (70, 70)
         
         # Test GCN encoding with large molecule
-        encoder = GCNEncoding(test_xyz_string)
+        encoder = GCNEncoder.from_xyz(test_xyz_string)
         encodings = encoder.encodings
         assert len(encodings["gcn0"]) == 70
         
