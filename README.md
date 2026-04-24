@@ -35,8 +35,9 @@ The package uses a modern `src` layout with lazy loading:
 src/mol_conversion/
 ├── __init__.py          # Package entry point with lazy loading
 ├── file_conversion.py   # File-to-file conversions
-├── memory_conversion.py # Memory-to-memory conversions  
-└── utils.py            # GCN encoding and utilities
+├── memory_conversion.py # Memory-to-memory conversions
+├── gcn_encoding.py      # GCN molecular encoding
+└── utils.py             # Utility functions (multi-frame XYZ parsing, etc.)
 ```
 
 ## Quick Start
@@ -44,22 +45,22 @@ src/mol_conversion/
 ### File Conversion
 
 ```python
-from mol_conversion import FileConversion
+from mol_conversion import FileConverter
 
 # Convert XYZ to various formats
-FileConversion.xyz_to_sdf("molecule.xyz", "molecule.sdf")
-FileConversion.xyz_to_pdb("molecule.xyz", "molecule.pdb")
+FileConverter.xyz_to_sdf("molecule.xyz", "molecule.sdf")
+FileConverter.xyz_to_pdb("molecule.xyz", "molecule.pdb")
 
 # Get string representations
-inchi = FileConversion.xyz_to_inchi("molecule.xyz")
-inchikey = FileConversion.xyz_to_inchikey("molecule.xyz")
-smiles = FileConversion.xyz_to_smiles("molecule.xyz")
+inchi = FileConverter.xyz_to_inchi("molecule.xyz")
+inchikey = FileConverter.xyz_to_inchikey("molecule.xyz")
+smiles = FileConverter.xyz_to_smiles("molecule.xyz")
 ```
 
 ### Memory Conversion
 
 ```python
-from mol_conversion import MemoryConversion
+from mol_conversion import MemoryConverter
 
 # Convert XYZ string to various formats
 xyz_string = """70
@@ -69,23 +70,25 @@ C      1.326816     0.000000     0.469020
 ... (remaining atoms)
 """
 
-mol_string = MemoryConversion.xyz_to_mol_string(xyz_string)
-inchi = MemoryConversion.xyz_to_inchi_string(xyz_string)
-bond_matrix = MemoryConversion.xyz_to_bond_order_matrix(xyz_string)
+mol_string = MemoryConverter.xyz_to_mol_string(xyz_string)
+inchi = MemoryConverter.xyz_to_inchi_string(xyz_string)
+bond_matrix = MemoryConverter.xyz_to_bond_order_matrix(xyz_string)
 ```
 
 ### GCN Encoding
 
 ```python
-from mol_conversion import GCNEncoding
+from mol_conversion import GCNEncoder
 
-# Generate hierarchical GCN encodings
-encoder = GCNEncoding(xyz_string)
-encodings = encoder.encodings
+# Generate hierarchical GCN encodings from various formats
+encoder = GCNEncoder.from_xyz(xyz_string)
+encoder = GCNEncoder.from_smiles("c1ccccc1")
+encoder = GCNEncoder.from_inchi("InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H")
 
 # Access different levels of encoding
+encodings = encoder.encodings
 gcn0 = encodings["gcn0"]  # Basic atom + neighbor count encoding
-gcn1 = encodings["gcn1"]  # First-order neighbor encoding  
+gcn1 = encodings["gcn1"]  # First-order neighbor encoding
 gcn2 = encodings["gcn2"]  # Second-order neighbor encoding
 
 # Hydrogen atoms return empty strings
@@ -124,7 +127,7 @@ set_log_level('ERROR')    # Also works
 
 ## API Reference
 
-### FileConversion Class
+### FileConverter Class
 
 Static methods for file-to-file conversions:
 
@@ -137,7 +140,7 @@ Static methods for file-to-file conversions:
 - `xyz_to_cif(xyz_file, cif_file)` - Convert XYZ to CIF
 - `merge_sdf_files(sdf_list, output_path, need_remove=False)` - Merge multiple SDF files
 
-### MemoryConversion Class
+### MemoryConverter Class
 
 Static methods for memory-to-memory conversions:
 
@@ -152,11 +155,18 @@ Static methods for memory-to-memory conversions:
 - `xyz_to_mol2_string(xyz_string)` - Convert XYZ to MOL2 string
 - `xyz_to_cif_string(xyz_string)` - Convert XYZ to CIF string
 
-### GCNEncoding Class
+### GCNEncoder Class
 
-Generate atom-level GCN-style encodings:
+Generate atom-level GCN-style encodings from multiple molecular formats:
 
-- `__init__(xyz_string)` - Initialize with XYZ string
+- `from_xyz(xyz_string)` - Initialize from XYZ format
+- `from_smiles(smiles_string)` - Initialize from SMILES format
+- `from_inchi(inchi_string)` - Initialize from InChI format
+- `from_sdf(sdf_string)` - Initialize from SDF format
+- `from_mol(mol_string)` - Initialize from MOL format
+- `from_mol2(mol2_string)` - Initialize from MOL2 format
+- `from_pdb(pdb_string)` - Initialize from PDB format
+- `from_cif(cif_string)` - Initialize from CIF format
 - `encodings` property - Returns dictionary with 'gcn0', 'gcn1', 'gcn2' encodings
 
 ### Utility Functions
