@@ -20,7 +20,10 @@ __license__ = "MIT"
 from typing import TYPE_CHECKING, Literal
 
 # Core classes that don't require Open Babel
-from .file_conversion import FileConversion
+from .file_conversion import FileConverter
+from .memory_conversion import MemoryConverter
+from .gcn_encoding import GCNEncoder
+from .utils import split_multiframe_xyz, split_multiframe_xyz_with_comments
 
 # Log level type
 LogLevel = Literal["none", "error", "warning", "info", "debug"]
@@ -103,57 +106,68 @@ set_log_level("error")
 # Open Babel-dependent imports - these will be imported lazily
 _memory_conversion_imported = False
 _utils_imported = False
+_gcn_encoding_imported = False
 
-# Type checking imports
-if TYPE_CHECKING:
-    from .memory_conversion import MemoryConversion
-    from .utils import GCNEncoding, split_multiframe_xyz, split_multiframe_xyz_with_comments
 
 def _import_memory_conversion():
-    """Lazy import of MemoryConversion class"""
-    global _memory_conversion_imported, MemoryConversion
+    """Lazy import of MemoryConverter class"""
+    global _memory_conversion_imported, MemoryConverter
     if not _memory_conversion_imported:
         try:
-            from .memory_conversion import MemoryConversion
+            from .memory_conversion import MemoryConverter
             _memory_conversion_imported = True
         except ImportError as e:
             raise ImportError(
-                f"MemoryConversion requires openbabel-wheel. Please install with: "
+                f"MemoryConverter requires openbabel-wheel. Please install with: "
                 f"pip install openbabel-wheel. Original error: {e}"
             )
-    return MemoryConversion
+    return MemoryConverter
 
 def _import_utils():
     """Lazy import of utility functions"""
-    global _utils_imported, GCNEncoding, split_multiframe_xyz, split_multiframe_xyz_with_comments
+    global _utils_imported, split_multiframe_xyz, split_multiframe_xyz_with_comments
     if not _utils_imported:
         try:
-            from .utils import GCNEncoding, split_multiframe_xyz, split_multiframe_xyz_with_comments
+            from .utils import split_multiframe_xyz, split_multiframe_xyz_with_comments
             _utils_imported = True
         except ImportError as e:
             raise ImportError(
                 f"Utils module requires openbabel-wheel. Please install with: "
                 f"pip install openbabel-wheel. Original error: {e}"
             )
-    return GCNEncoding, split_multiframe_xyz, split_multiframe_xyz_with_comments
+    return split_multiframe_xyz, split_multiframe_xyz_with_comments
+
+def _import_gcn_encoding():
+    """Lazy import of GCNEncoder class"""
+    global _gcn_encoding_imported, GCNEncoder
+    if not _gcn_encoding_imported:
+        try:
+            from .gcn_encoding import GCNEncoder
+            _gcn_encoding_imported = True
+        except ImportError as e:
+            raise ImportError(
+                f"GCNEncoder requires openbabel-wheel. Please install with: "
+                f"pip install openbabel-wheel. Original error: {e}"
+            )
+    return GCNEncoder
 
 def __getattr__(name):
     """Lazy attribute access for Open Babel-dependent classes and functions"""
-    if name == 'MemoryConversion':
+    if name == 'MemoryConverter':
         return _import_memory_conversion()
-    elif name == 'GCNEncoding':
-        return _import_utils()[0]
+    elif name == 'GCNEncoder':
+        return _import_gcn_encoding()
     elif name == 'split_multiframe_xyz':
-        return _import_utils()[1]
+        return _import_utils()[0]
     elif name == 'split_multiframe_xyz_with_comments':
-        return _import_utils()[2]
+        return _import_utils()[1]
     else:
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 __all__ = [
-    "FileConversion",
-    "MemoryConversion", 
-    "GCNEncoding",
+    "FileConverter",
+    "MemoryConverter",
+    "GCNEncoder",
     "split_multiframe_xyz",
     "split_multiframe_xyz_with_comments",
     "set_log_level",

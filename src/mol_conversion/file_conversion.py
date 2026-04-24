@@ -3,7 +3,7 @@ import subprocess
 from rdkit import Chem
 from tqdm import tqdm
 
-class FileConversion:
+class FileConverter:
     """
     File conversion methods collection class
     Provides all file-to-file molecular format conversion functions

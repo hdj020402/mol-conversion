@@ -3,7 +3,7 @@ import numpy as np
 from openbabel import pybel, openbabel
 from rdkit import Chem
 
-class MemoryConversion:
+class MemoryConverter:
     """
     Memory conversion methods collection class
     Provides all memory-to-memory molecular format conversion functions
