@@ -26,12 +26,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e .[dev]
         
-    - name: Install Open Babel
-      run: |
-        wget -qO- https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh | bash -s -- -b
-        ~/miniconda3/bin/conda install openbabel -c conda-forge -y
-        echo "~/miniconda3/bin" >> $GITHUB_PATH
-        
     - name: Test with pytest
       run: |
         pytest --cov=mol_conversion --cov-report=xml
