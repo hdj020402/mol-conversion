@@ -40,12 +40,12 @@ class GCNEncoder:
     @classmethod
     def from_smiles(cls, smiles_str: str) -> GCNEncoder:
         """Create GCNEncoder from SMILES format string."""
-        return cls._from_format(smiles_str, "smi")
+        return cls._from_format(smiles_str, "smi", add_hydrogens=True)
 
     @classmethod
     def from_inchi(cls, inchi_str: str) -> GCNEncoder:
         """Create GCNEncoder from InChI format string."""
-        return cls._from_format(inchi_str, "inchi")
+        return cls._from_format(inchi_str, "inchi", add_hydrogens=True)
 
     @classmethod
     def from_sdf(cls, sdf_str: str) -> GCNEncoder:
@@ -73,15 +73,18 @@ class GCNEncoder:
         return cls._from_format(cif_str, "cif")
 
     @classmethod
-    def _from_format(cls, mol_str: str, fmt: str) -> GCNEncoder:
+    def _from_format(cls, mol_str: str, fmt: str, add_hydrogens: bool = False) -> GCNEncoder:
         """
         Internal method: parse molecular string and create GCNEncoder instance.
 
         Args:
             mol_str: Molecular structure string.
             fmt: Open Babel format identifier (e.g. "xyz", "smi", "inchi").
+            add_hydrogens: Whether to add explicit hydrogens to the molecule.
         """
         mol = pybel.readstring(fmt, mol_str)
+        if add_hydrogens:
+            mol.OBMol.AddHydrogens()
         atoms, adjacency = cls._extract_atoms_and_adjacency(mol.OBMol)
         return cls(atoms, adjacency)
 
