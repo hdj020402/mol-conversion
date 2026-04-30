@@ -12,7 +12,7 @@ Features:
 - Multi-frame XYZ string parsing
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Dejun Hu"
 __email__ = "hudejun2002@gmail.com"
 __license__ = "MIT"
