@@ -146,12 +146,7 @@ class TestFileConverter:
         assert len(cif_string) > 0
         # Basic CIF validation
         assert "data_" in cif_string
-    
-    def test_xyz_to_inchi_file_not_found(self):
-        """Test XYZ to InChI conversion with non-existent file"""
-        with pytest.raises(FileNotFoundError):
-            FileConverter.xyz_to_inchi("nonexistent.xyz")
-    
+
     def _is_openbabel_available(self):
         """Check if Open Babel is available on the system"""
         try:

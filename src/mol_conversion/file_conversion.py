@@ -37,9 +37,6 @@ class FileConverter:
         Returns:
             str: InChI format string
         """
-        if not os.path.exists(xyz_file):
-            raise FileNotFoundError(f'File {xyz_file} does not exist!')
-        
         cmd_options = '--readconformer'
         if fixed_h:
             cmd_options += ' -xF'
@@ -90,7 +87,7 @@ class FileConverter:
         Returns:
             str: SMILES format string
         """
-        openbabel_cmd = f'obabel -ixyz {xyz_file} -osmi'
+        openbabel_cmd = f'obabel -ixyz {xyz_file} -ocan'
 
         result = subprocess.run(
             openbabel_cmd,
