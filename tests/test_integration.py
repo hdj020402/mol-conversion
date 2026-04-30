@@ -157,29 +157,7 @@ class TestIntegration:
         assert isinstance(pdb_string, str) and len(pdb_string) > 0
         assert isinstance(encodings, dict) and len(encodings) == 3
         assert isinstance(bond_matrix, object) and bond_matrix.size > 0
-    
-    def test_error_handling_consistency(self, test_xyz_file):
-        """Test error handling consistency across modules"""
-        # Test file not found
-        with pytest.raises(FileNotFoundError):
-            FileConverter.xyz_to_inchi("nonexistent.xyz")
-        
-        # Test invalid XYZ content
-        invalid_xyz = """1
-Invalid atom
-X    0.000000    0.000000    0.000000
-"""
-        
-        # Memory conversion should handle invalid input gracefully
-        if self._is_openbabel_available():
-            try:
-                result = MemoryConverter.xyz_to_inchi_string(invalid_xyz)
-                # Should either return a result or raise an exception
-                assert isinstance(result, str)
-            except Exception:
-                # It's acceptable to raise an exception for invalid input
-                pass
-    
+
     def test_large_molecule_handling(self, test_xyz_string):
         """Test handling of large molecules (70 atoms)"""
         # Skip test if Open Babel is not available

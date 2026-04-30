@@ -3,6 +3,8 @@
 import pytest
 import numpy as np
 from pathlib import Path
+from rdkit import Chem
+from rdkit.Chem import AllChem
 from mol_conversion import MemoryConverter
 
 
@@ -210,12 +212,12 @@ Y    1.000000    0.000000    0.000000
         # Skip test if Open Babel is not available
         if not self._is_openbabel_available():
             pytest.skip("Open Babel not available")
-        
+
         invalid_xyz = """1
 Invalid atom
 X    0.000000    0.000000    0.000000
 """
-        
+
         # Should not raise exceptions for invalid input
         # The behavior depends on Open Babel's handling of unknown atoms
         try:
@@ -224,7 +226,179 @@ X    0.000000    0.000000    0.000000
         except Exception:
             # It's acceptable if Open Babel raises an exception for invalid input
             pass
-    
+
+    # ------------------------------------------------------------------
+    # Charged-molecule fixtures (cation + anion)
+    # XYZ generated via RDKit EmbedMolecule with fixed seed for reproducibility.
+    # ------------------------------------------------------------------
+    @pytest.fixture
+    def cation_data(self):
+        """Ethylammonium [CC-NH3]+ as (xyz_str, formal_charges_dict)."""
+        if not self._is_openbabel_available() or not self._is_rdkit_available():
+            pytest.skip("Open Babel or RDKit not available")
+        mol = Chem.AddHs(Chem.MolFromSmiles("CC[NH3+]"))
+        AllChem.EmbedMolecule(mol, randomSeed=42)
+        AllChem.MMFFOptimizeMolecule(mol)
+        xyz = Chem.MolToXYZBlock(mol)
+        n_idx = next(a.GetIdx() for a in mol.GetAtoms() if a.GetSymbol() == "N")
+        return xyz, {n_idx: 1}
+
+    @pytest.fixture
+    def anion_data(self):
+        """Ethoxide CH3-CH2-O- as (xyz_str, formal_charges_dict).
+
+        Chosen over carboxylates (e.g. acetate) because the C-O bond is
+        unambiguous: there is no resonance for OB's geometry-based bond
+        perception to misassign.
+        """
+        if not self._is_openbabel_available() or not self._is_rdkit_available():
+            pytest.skip("Open Babel or RDKit not available")
+        mol = Chem.AddHs(Chem.MolFromSmiles("CC[O-]"))
+        AllChem.EmbedMolecule(mol, randomSeed=42)
+        AllChem.MMFFOptimizeMolecule(mol)
+        xyz = Chem.MolToXYZBlock(mol)
+        o_idx = next(a.GetIdx() for a in mol.GetAtoms()
+                     if a.GetSymbol() == "O" and a.GetFormalCharge() == -1)
+        return xyz, {o_idx: -1}
+
+    # ------------------------------------------------------------------
+    # Group A: XYZ + formal_charges
+    # ------------------------------------------------------------------
+    def test_xyz_to_inchi_string_cation(self, cation_data):
+        xyz, charges = cation_data
+        inchi = MemoryConverter.xyz_to_inchi_string(xyz, formal_charges=charges)
+        assert inchi == "InChI=1S/C2H7N/c1-2-3/h2-3H2,1H3/p+1"
+
+    def test_xyz_to_inchi_string_cation_fixed_h(self, cation_data):
+        xyz, charges = cation_data
+        inchi = MemoryConverter.xyz_to_inchi_string(xyz, fixed_h=True, formal_charges=charges)
+        assert inchi == "InChI=1/C2H7N/c1-2-3/h2-3H2,1H3/p+1/fC2H8N/h3H/q+1"
+
+    def test_xyz_to_inchikey_string_cation(self, cation_data):
+        xyz, charges = cation_data
+        key = MemoryConverter.xyz_to_inchikey_string(xyz, formal_charges=charges)
+        assert key == "QUSNBJAOOMFDIB-UHFFFAOYSA-O"
+
+    def test_xyz_to_smiles_string_cation(self, cation_data):
+        """Cation SMILES is canonical and exactly [NH3+]."""
+        xyz, charges = cation_data
+        smiles = MemoryConverter.xyz_to_smiles_string(xyz, formal_charges=charges)
+        assert smiles == "CC[NH3+]"
+
+    def test_xyz_to_rdkit_mol_cation(self, cation_data):
+        xyz, charges = cation_data
+        mol = MemoryConverter.xyz_to_rdkit_mol(xyz, formal_charges=charges)
+        assert mol is not None
+        assert Chem.GetFormalCharge(mol) == 1
+
+    def test_xyz_to_mol_string_cation(self, cation_data):
+        """MOL block must carry the charge as an M CHG line."""
+        xyz, charges = cation_data
+        molblock = MemoryConverter.xyz_to_mol_string(xyz, formal_charges=charges)
+        assert "M  CHG" in molblock
+
+    def test_xyz_to_inchi_string_anion(self, anion_data):
+        xyz, charges = anion_data
+        inchi = MemoryConverter.xyz_to_inchi_string(xyz, formal_charges=charges)
+        assert inchi == "InChI=1S/C2H5O/c1-2-3/h2H2,1H3/q-1"
+
+    def test_xyz_to_inchi_string_anion_fixed_h(self, anion_data):
+        xyz, charges = anion_data
+        inchi = MemoryConverter.xyz_to_inchi_string(xyz, fixed_h=True, formal_charges=charges)
+        assert inchi == "InChI=1/C2H5O/c1-2-3/h2H2,1H3/q-1"
+
+    def test_xyz_to_inchikey_string_anion(self, anion_data):
+        xyz, charges = anion_data
+        key = MemoryConverter.xyz_to_inchikey_string(xyz, formal_charges=charges)
+        assert key == "HHFAWKCIHAUFRX-UHFFFAOYSA-N"
+
+    def test_xyz_to_smiles_string_anion(self, anion_data):
+        xyz, charges = anion_data
+        smiles = MemoryConverter.xyz_to_smiles_string(xyz, formal_charges=charges)
+        assert smiles == "[O-]CC"
+
+    def test_xyz_to_rdkit_mol_anion(self, anion_data):
+        xyz, charges = anion_data
+        mol = MemoryConverter.xyz_to_rdkit_mol(xyz, formal_charges=charges)
+        assert mol is not None
+        assert Chem.GetFormalCharge(mol) == -1
+
+    # ------------------------------------------------------------------
+    # Group B: molblock_to_* (new methods, cation only)
+    # ------------------------------------------------------------------
+    def test_molblock_to_inchi_string(self, cation_data):
+        xyz, charges = cation_data
+        molblock = MemoryConverter.xyz_to_mol_string(xyz, formal_charges=charges)
+        inchi = MemoryConverter.molblock_to_inchi_string(molblock)
+        assert inchi == "InChI=1S/C2H7N/c1-2-3/h2-3H2,1H3/p+1"
+
+    def test_molblock_to_inchikey_string(self, cation_data):
+        xyz, charges = cation_data
+        molblock = MemoryConverter.xyz_to_mol_string(xyz, formal_charges=charges)
+        assert MemoryConverter.molblock_to_inchikey_string(molblock) == "QUSNBJAOOMFDIB-UHFFFAOYSA-O"
+
+    def test_molblock_to_smiles_string(self, cation_data):
+        xyz, charges = cation_data
+        molblock = MemoryConverter.xyz_to_mol_string(xyz, formal_charges=charges)
+        smiles = MemoryConverter.molblock_to_smiles_string(molblock)
+        rdmol = Chem.MolFromSmiles(smiles)
+        assert rdmol is not None and Chem.GetFormalCharge(rdmol) == 1
+
+    def test_molblock_to_rdkit_mol(self, cation_data):
+        xyz, charges = cation_data
+        molblock = MemoryConverter.xyz_to_mol_string(xyz, formal_charges=charges)
+        mol = MemoryConverter.molblock_to_rdkit_mol(molblock)
+        assert mol is not None
+        assert Chem.GetFormalCharge(mol) == 1
+
+    def test_molblock_to_xyz_string(self, cation_data):
+        xyz, charges = cation_data
+        molblock = MemoryConverter.xyz_to_mol_string(xyz, formal_charges=charges)
+        xyz_back = MemoryConverter.molblock_to_xyz_string(molblock)
+        assert int(xyz_back.strip().split('\n')[0]) == 11
+
+    # ------------------------------------------------------------------
+    # Group C: cross-path consistency (the original bug's regression test)
+    # ------------------------------------------------------------------
+    def test_xyz_path_matches_molblock_path_cation(self, cation_data):
+        xyz, charges = cation_data
+        via_xyz = MemoryConverter.xyz_to_inchi_string(xyz, fixed_h=True, formal_charges=charges)
+        molblock = MemoryConverter.xyz_to_mol_string(xyz, formal_charges=charges)
+        via_mol = MemoryConverter.molblock_to_inchi_string(molblock, fixed_h=True)
+        assert via_xyz == via_mol
+
+    def test_xyz_path_matches_molblock_path_anion(self, anion_data):
+        xyz, charges = anion_data
+        via_xyz = MemoryConverter.xyz_to_inchi_string(xyz, fixed_h=True, formal_charges=charges)
+        molblock = MemoryConverter.xyz_to_mol_string(xyz, formal_charges=charges)
+        via_mol = MemoryConverter.molblock_to_inchi_string(molblock, fixed_h=True)
+        assert via_xyz == via_mol
+
+    # ------------------------------------------------------------------
+    # Group D: edge cases / backward compat
+    # ------------------------------------------------------------------
+    def test_empty_formal_charges_equiv_none(self, test_xyz_string):
+        """formal_charges={} should produce the same output as formal_charges=None."""
+        if not self._is_openbabel_available():
+            pytest.skip("Open Babel not available")
+        inchi_none = MemoryConverter.xyz_to_inchi_string(test_xyz_string)
+        inchi_empty = MemoryConverter.xyz_to_inchi_string(test_xyz_string, formal_charges={})
+        assert inchi_none == inchi_empty
+
+    def test_neutral_methods_backward_compat(self, test_xyz_string):
+        """All XYZ-source methods callable with positional XYZ arg only."""
+        if not self._is_openbabel_available():
+            pytest.skip("Open Babel not available")
+        MemoryConverter.xyz_to_mol_string(test_xyz_string)
+        MemoryConverter.xyz_to_rdkit_mol(test_xyz_string)
+        MemoryConverter.xyz_to_inchi_string(test_xyz_string)
+        MemoryConverter.xyz_to_inchikey_string(test_xyz_string)
+        MemoryConverter.xyz_to_smiles_string(test_xyz_string)
+        MemoryConverter.xyz_to_bond_order_matrix(test_xyz_string)
+        MemoryConverter.xyz_to_sdf_string(test_xyz_string)
+        MemoryConverter.xyz_to_pdb_string(test_xyz_string)
+        MemoryConverter.xyz_to_mol2_string(test_xyz_string)
+
     def _is_openbabel_available(self):
         """Check if Open Babel Python bindings are available"""
         try:
