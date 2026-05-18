@@ -25,7 +25,7 @@ classifiers = [
 keywords = ["chemistry", "molecule", "xyz", "conversion", "openbabel", "rdkit"]
 dependencies = [
     "numpy>=1.20.0",
-    "rdkit>=2020.03.5",
+    "rdkit>=2022.09",
     "tqdm>=4.60.0",
     "openbabel-wheel>=3.1.1.19",
 ]

@@ -375,6 +375,94 @@ X    0.000000    0.000000    0.000000
         assert via_xyz == via_mol
 
     # ------------------------------------------------------------------
+    # Group E: XYZ + total_charge (RDKit xyz2mol inference)
+    # ------------------------------------------------------------------
+    @pytest.fixture
+    def zwitterion_data(self):
+        """Glycine zwitterion [NH3+]CC(=O)[O-] as (xyz_str, expected_per_atom_dict).
+
+        Total charge is 0 but two atoms carry non-zero formal charges; this is
+        the case where total_charge mode shines, since specifying the per-atom
+        dict requires the user to know the N and O indices ahead of time.
+        """
+        if not self._is_openbabel_available() or not self._is_rdkit_available():
+            pytest.skip("Open Babel or RDKit not available")
+        mol = Chem.AddHs(Chem.MolFromSmiles("[NH3+]CC(=O)[O-]"))
+        AllChem.EmbedMolecule(mol, randomSeed=42)
+        AllChem.MMFFOptimizeMolecule(mol)
+        xyz = Chem.MolToXYZBlock(mol)
+        expected = {
+            a.GetIdx(): a.GetFormalCharge()
+            for a in mol.GetAtoms() if a.GetFormalCharge() != 0
+        }
+        return xyz, expected
+
+    def test_total_charge_cation_matches_formal_charges(self, cation_data):
+        """xyz_to_inchi(total_charge=+1) should match the formal_charges path."""
+        xyz, charges = cation_data
+        via_total = MemoryConverter.xyz_to_inchi_string(xyz, total_charge=1)
+        via_dict = MemoryConverter.xyz_to_inchi_string(xyz, formal_charges=charges)
+        assert via_total == via_dict == "InChI=1S/C2H7N/c1-2-3/h2-3H2,1H3/p+1"
+
+    def test_total_charge_anion_matches_formal_charges(self, anion_data):
+        xyz, charges = anion_data
+        via_total = MemoryConverter.xyz_to_inchi_string(xyz, total_charge=-1)
+        via_dict = MemoryConverter.xyz_to_inchi_string(xyz, formal_charges=charges)
+        assert via_total == via_dict == "InChI=1S/C2H5O/c1-2-3/h2H2,1H3/q-1"
+
+    def test_total_charge_zwitterion(self, zwitterion_data):
+        """Glycine zwitterion: total=0 but per-atom non-zero. Inference must
+        find both the +1 N and -1 O without the caller specifying indices."""
+        xyz, expected = zwitterion_data
+        inferred = MemoryConverter._infer_formal_charges(xyz, total_charge=0)
+        assert inferred == expected
+        # Round-trip through OB: SMILES should carry both [N+] and [O-]
+        smiles = MemoryConverter.xyz_to_smiles_string(xyz, total_charge=0)
+        assert "[NH3+]" in smiles and "[O-]" in smiles
+
+    def test_total_charge_smiles_cation(self, cation_data):
+        xyz, _ = cation_data
+        smiles = MemoryConverter.xyz_to_smiles_string(xyz, total_charge=1)
+        assert smiles == "CC[NH3+]"
+
+    def test_total_charge_rdkit_mol_cation(self, cation_data):
+        xyz, _ = cation_data
+        mol = MemoryConverter.xyz_to_rdkit_mol(xyz, total_charge=1)
+        assert Chem.GetFormalCharge(mol) == 1
+
+    def test_total_charge_and_formal_charges_consistent(self, cation_data):
+        """Passing both with matching sum should succeed (no spurious error)."""
+        xyz, charges = cation_data
+        inchi = MemoryConverter.xyz_to_inchi_string(
+            xyz, formal_charges=charges, total_charge=1
+        )
+        assert inchi == "InChI=1S/C2H7N/c1-2-3/h2-3H2,1H3/p+1"
+
+    def test_total_charge_and_formal_charges_contradiction_raises(self, cation_data):
+        """sum(formal_charges) != total_charge is a genuine input error."""
+        xyz, charges = cation_data  # sum == +1
+        with pytest.raises(ValueError, match="contradicts"):
+            MemoryConverter.xyz_to_inchi_string(
+                xyz, formal_charges=charges, total_charge=2
+            )
+
+    def test_wrong_total_charge_raises(self, cation_data):
+        """RDKit's DetermineBonds raises when total_charge is inconsistent
+        with what the geometry can support; we propagate that unchanged."""
+        xyz, _ = cation_data
+        with pytest.raises(ValueError):
+            MemoryConverter.xyz_to_inchi_string(xyz, total_charge=0)
+
+    def test_total_charge_zero_neutral_equiv_no_charge(self, test_xyz_string):
+        """For a neutral molecule, total_charge=0 should yield the same
+        InChI as not specifying any charge info."""
+        if not self._is_openbabel_available() or not self._is_rdkit_available():
+            pytest.skip("Open Babel or RDKit not available")
+        inchi_none = MemoryConverter.xyz_to_inchi_string(test_xyz_string)
+        inchi_zero = MemoryConverter.xyz_to_inchi_string(test_xyz_string, total_charge=0)
+        assert inchi_none == inchi_zero
+
+    # ------------------------------------------------------------------
     # Group D: edge cases / backward compat
     # ------------------------------------------------------------------
     def test_empty_formal_charges_equiv_none(self, test_xyz_string):
